@@ -5,6 +5,7 @@
 package xz
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -22,7 +23,8 @@ type reader struct {
 	lastErr error
 }
 
-func NewReader(src io.Reader) io.Reader {
+// NewReader creates a XZ decoder reader from the given source.
+func NewReader(src io.Reader) io.ReadCloser {
 	stream, err := lzma.NewStreamDecoder(math.MaxUint64, lzma.Concatenated, lzma.TellUnsupportedCheck)
 	return &reader{
 		src:     src,
@@ -59,12 +61,24 @@ func (r *reader) Read(p []byte) (int, error) {
 			}
 		case lzma.StreamEnd:
 			r.lastErr = io.EOF
-			r.stream.End()
+			_ = r.stream.Close()
 			return written, io.EOF
 		default:
-			r.lastErr = fmt.Errorf("lzma: error reading (%d)", ret)
-			r.stream.End()
+			r.lastErr = fmt.Errorf("lzma return error code=%d", ret)
+			_ = r.stream.Close()
 			return written, r.lastErr
 		}
 	}
+}
+
+// Close closes the reader. If the caller consumes the entire Reader until io.EOF
+// (or other error) as is typical with methods such as io.ReadAll then the
+// resources will have been freed from the terminal Read call and close will
+// have no effect.
+func (r *reader) Close() error {
+	if r.lastErr == nil {
+		r.lastErr = errors.New("reader is closed")
+		_ = r.stream.Close()
+	}
+	return nil
 }

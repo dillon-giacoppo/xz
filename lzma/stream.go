@@ -85,7 +85,7 @@ const (
 	FailFast                                    // enables eagerly returning errors in threaded decoding. Since liblzma 5.3.3alpha
 )
 
-// NewStreamDecoder initializes an .xz Stream decoder.
+// NewStreamDecoder initializes an .xz Stream configured as a decoder.
 func NewStreamDecoder(memlimit uint64, flags ...DecoderOpt) (*Stream, error) {
 	var decoderFlag int32
 	for _, flag := range flags {
@@ -134,12 +134,13 @@ func (stream *Stream) Code(action Action) Return {
 	return Return(C.safe_lzma_code((*C.lzma_stream)(&stream.internal), C.lzma_action(action)))
 }
 
-// End frees memory allocated for the coder data structures used internally.
-func (stream *Stream) End() {
+// Close frees memory allocated for the coder data structures used internally.
+func (stream *Stream) Close() error {
 	stream.pin()
 	defer stream.pinner.Unpin()
 
 	C.lzma_end((*C.lzma_stream)(&stream.internal))
+	return nil
 }
 
 func (stream *Stream) pin() {
