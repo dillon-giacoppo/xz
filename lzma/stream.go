@@ -23,12 +23,12 @@ lzma_ret safe_lzma_code(lzma_stream *stream, lzma_action action) {
 	// assume we have gone off the end of the slice and therefore must null the
 	// now invalid reference out.
 	if (stream->avail_out == 0) {
-      stream->next_out = NULL;
+		stream->next_out = NULL;
 	}
-    if (stream->avail_in == 0) {
-      stream->next_in = NULL;
+	if (stream->avail_in == 0) {
+		stream->next_in = NULL;
 	}
-    return ret;
+	return ret;
 }
 */
 import "C"
